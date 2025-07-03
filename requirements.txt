@@ -1,0 +1,3 @@
+polars
+mysql-connector-python
+requests

@@ -1,3 +1,4 @@
 polars
 mysql-connector-python
 requests
+beautifulsoup4

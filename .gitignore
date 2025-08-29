@@ -1,3 +1,5 @@
 database_creds.json
 .DS_Store
 nhl_data_parser.log
+*.csv
+*.pyc

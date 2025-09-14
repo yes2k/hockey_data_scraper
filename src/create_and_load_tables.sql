@@ -1,4 +1,7 @@
 create database if not exists nhl_api_data;
+create database if not exists xg;
+create database if not exists win_model;
+
 use nhl_api_data;
 
 SET GLOBAL local_infile = true;
@@ -93,7 +96,7 @@ create table json_pbp_plays (
     PRIMARY KEY (game_id, n)
 );
 
-drop table if exists json_shift_game_info;
+drop table if exists json_shift_info;
 create table json_shift_game_info (
     game_id INT,
     id INT,
@@ -109,38 +112,38 @@ create table json_shift_game_info (
     PRIMARY KEY (game_id, id, player_id, team_id, period, start_time, end_time)
 );
 
--- Loading tables from csv
-LOAD DATA LOCAL INFILE './data/csvs/html_pbp_plays.csv'
-INTO TABLE html_pbp_plays
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- -- Loading tables from csv
+-- LOAD DATA LOCAL INFILE './data/csvs/html_pbp_plays.csv'
+-- INTO TABLE html_pbp_plays
+-- FIELDS TERMINATED BY ',' 
+-- ENCLOSED BY '"'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE './data/csvs/json_pbp_game_info.csv'
-INTO TABLE json_pbp_game_info
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- LOAD DATA LOCAL INFILE './data/csvs/json_pbp_game_info.csv'
+-- INTO TABLE json_pbp_game_info
+-- FIELDS TERMINATED BY ',' 
+-- ENCLOSED BY '"'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE './data/csvs/json_pbp_player_info.csv'
-INTO TABLE json_pbp_player_info
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- LOAD DATA LOCAL INFILE './data/csvs/json_pbp_player_info.csv'
+-- INTO TABLE json_pbp_player_info
+-- FIELDS TERMINATED BY ',' 
+-- ENCLOSED BY '"'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE './data/csvs/json_pbp_plays.csv'
-INTO TABLE json_pbp_plays
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- LOAD DATA LOCAL INFILE './data/csvs/json_pbp_plays.csv'
+-- INTO TABLE json_pbp_plays
+-- FIELDS TERMINATED BY ',' 
+-- ENCLOSED BY '"'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE './data/csvs/json_shift_game_info.csv'
-INTO TABLE json_shift_game_info
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- LOAD DATA LOCAL INFILE './data/csvs/json_shift_game_info.csv'
+-- INTO TABLE json_shift_game_info
+-- FIELDS TERMINATED BY ',' 
+-- ENCLOSED BY '"'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 ROWS;

@@ -14,6 +14,7 @@ class DBConnector:
             password=database_creds["password"],
             allow_local_infile=True
         )
+   
     
     def execute_sql_file(self, sql_file_path: str):
         mycursor = self.mydb.cursor()
@@ -28,6 +29,7 @@ class DBConnector:
         
         self.mydb.commit()
         mycursor.close()
+
     
     def get_query_result(self, query: str) -> pl.DataFrame:
         db_cursor = self.mydb.cursor()
@@ -41,5 +43,30 @@ class DBConnector:
             df = pl.DataFrame()
         db_cursor.close()
         return df
+    
 
+    def load_parquet_to_mysql(self, parquet_path: str, table_name: str):
+        # Read Parquet file
+        df = pl.read_parquet(parquet_path)
+        if df.is_empty():
+            print(f"No data found in {parquet_path}")
+            return
+
+        self.push_dataframe_to_db(df, table_name)
+
+
+    def push_dataframe_to_db(self, df: pl.DataFrame, table_name: str):
+        if df.is_empty():
+            print("DataFrame is empty. Nothing to insert.")
+            return
+
+        cursor = self.mydb.cursor()
+        columns = df.columns
+        placeholders = ','.join(['%s'] * len(columns))
+        insert_sql = f"INSERT INTO {table_name} ({','.join(columns)}) VALUES ({placeholders})"
+
+        for row in df.iter_rows():
+            cursor.execute(insert_sql, row)
+        self.mydb.commit()
+        cursor.close()
         

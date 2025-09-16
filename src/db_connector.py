@@ -12,6 +12,7 @@ class DBConnector:
             host=database_creds["host"],
             user=database_creds["user"],
             password=database_creds["password"],
+            port=database_creds["port"],
             allow_local_infile=True
         )
    
@@ -25,7 +26,11 @@ class DBConnector:
         
         for statement in sql_script.split(';'):
             if statement.strip():
-                mycursor.execute(statement)
+                try:
+                    mycursor.execute(statement)
+                except mysql.connector.Error as err:
+                    print(f"Error executing SQL statement: {statement.strip()[:100]}...")
+                    print(f"MySQL Error: {err}")
         
         self.mydb.commit()
         mycursor.close()
@@ -48,6 +53,7 @@ class DBConnector:
     def load_parquet_to_mysql(self, parquet_path: str, table_name: str):
         # Read Parquet file
         df = pl.read_parquet(parquet_path)
+
         if df.is_empty():
             print(f"No data found in {parquet_path}")
             return
@@ -66,6 +72,7 @@ class DBConnector:
         insert_sql = f"INSERT INTO {table_name} ({','.join(columns)}) VALUES ({placeholders})"
 
         for row in df.iter_rows():
+            print(row)
             cursor.execute(insert_sql, row)
         self.mydb.commit()
         cursor.close()

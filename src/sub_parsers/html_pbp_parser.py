@@ -1,5 +1,5 @@
 import polars as pl
-from json_pbp_parser import EventType, event_type_to_string
+from sub_parsers.json_pbp_parser import EventType, event_type_to_string
 from dataclasses import dataclass
 from bs4 import BeautifulSoup
 import requests

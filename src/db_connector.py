@@ -19,15 +19,17 @@ class DBConnector:
         # except mysql.connector.Error as err:
         #     print(f"Error: {err}")
 
-
-        # self.mydb = mysql.connector.connect(
-        #     host=database_creds["host"],
-        #     user=database_creds["user"],
-        #     password=database_creds["password"],
-        #     port=database_creds["port"],
-        #     allow_local_infile=True
-        # )
-   
+        try:
+            self.mydb = mysql.connector.connect(
+                host=database_creds["host"],
+                user=database_creds["user"],
+                password=database_creds["password"],
+                port=database_creds["port"],
+                allow_local_infile=True
+            )
+        except mysql.connector.Error as err:
+            print("connection error")
+            raise err
     
     def execute_sql_file(self, sql_file_path: str):
         mycursor = self.mydb.cursor()

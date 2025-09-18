@@ -97,7 +97,7 @@ create table json_pbp_plays (
 );
 
 drop table if exists json_shift_info;
-create table json_shift_game_info (
+create table json_shift_info (
     game_id INT,
     id INT,
     start_time VARCHAR(5),

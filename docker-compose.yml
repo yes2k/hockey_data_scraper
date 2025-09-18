@@ -1,29 +1,29 @@
-version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: nhl_mysql
-    restart: unless-stopped
+  db-mysql:
+    image: mysql:latest
+    container_name: "test-mysql-db"
+    # restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_USER: "root"
+      MYSQL_ROOT_PASSWORD: "password"
+      # MYSQL_DATABASE: "db"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_HOST: "%"
     ports:
       - "3307:3306"
-    command: --local-infile=1
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+      test: mysql --user=root --password=password -e 'show databases'
+      # timeout: 20s
+      # retries: 10
+    command: --local-infile=1
+  
   scraper:
     build:
       context: .
-      dockerfile: Doc kerfile
+      dockerfile: Dockerfile
     container_name: nhl_scraper
-    restart: unless-stopped
+    # restart: unless-stopped
     depends_on:
-      mysql:
+      db-mysql:
         condition: service_healthy

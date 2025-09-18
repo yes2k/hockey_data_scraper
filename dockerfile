@@ -1,6 +1,6 @@
-FROM python:3.13-slim
+FROM python:3.13
 
-RUN apt-get update && apt-get install -y cron
+RUN apt-get update && apt-get install -y cron default-mysql-client
 
 WORKDIR /app
 
@@ -10,12 +10,8 @@ RUN pip install -r requirements.txt
 COPY ./src ./src
 COPY ./crontab /etc/cron.d/nhl_cron
 COPY ./csvs ./csvs
+COPY ./database_creds.json ./database_creds.json
+# COPY ./test_connection.py ./test_connection.py
+COPY ./startup.sh ./startup.sh
 
-RUN python ./src/nhl_data_parser.py build_from_csv_backup --csv_path ./csvs --sql_file_path ./src/create_and_load_tables.sql
-RUN python ./src/nhl_data_parser --update 
-
-
-RUN chmod 0644 /etc/cron.d/nhl_cron && \
-    crontab /etc/cron.d/nhl_cron
-
-CMD ["cron", "-f"]
+CMD ["sh", "startup.sh"]

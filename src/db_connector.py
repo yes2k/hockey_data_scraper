@@ -8,13 +8,25 @@ class DBConnector:
         with open(db_config_path, 'r') as f:
             database_creds = json.load(f)
         
+        # try:
         self.mydb = mysql.connector.connect(
-            host=database_creds["host"],
-            user=database_creds["user"],
-            password=database_creds["password"],
-            port=database_creds["port"],
+            host="test-mysql-db",
+            user="root",
+            password="password",
             allow_local_infile=True
         )
+        # print("Connection successful.")
+        # except mysql.connector.Error as err:
+        #     print(f"Error: {err}")
+
+
+        # self.mydb = mysql.connector.connect(
+        #     host=database_creds["host"],
+        #     user=database_creds["user"],
+        #     password=database_creds["password"],
+        #     port=database_creds["port"],
+        #     allow_local_infile=True
+        # )
    
     
     def execute_sql_file(self, sql_file_path: str):

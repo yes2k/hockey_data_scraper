@@ -31,7 +31,7 @@ create table html_pbp_plays(
     home_on_ice_p3 VARCHAR(2),
     home_on_ice_p4 VARCHAR(2),
     home_on_ice_p5 VARCHAR(2),
-    home_on_ice_p6 VARCHAR(2), 
+    home_on_ice_p6 VARCHAR(2),
     home_on_ice_p7 VARCHAR(2),
     home_on_ice_p8 VARCHAR(2),
     home_on_ice_p9 VARCHAR(2),
@@ -115,35 +115,35 @@ create table json_shift_info (
 -- Loading tables from csv
 LOAD DATA LOCAL INFILE './csvs/html_pbp_plays.csv'
 INTO TABLE html_pbp_plays
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE './csvs/json_pbp_game_info.csv'
 INTO TABLE json_pbp_game_info
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE './csvs/json_pbp_player_info.csv'
 INTO TABLE json_pbp_player_info
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE './csvs/json_pbp_plays.csv'
 INTO TABLE json_pbp_plays
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE './csvs/json_shift_info.csv'
 INTO TABLE json_shift_info
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;

@@ -84,7 +84,6 @@ class DBConnector:
         columns = df.columns
         placeholders = ','.join(['%s'] * len(columns))
         insert_sql = f"INSERT INTO {table_name} ({','.join(columns)}) VALUES ({placeholders})"
-
         for row in df.iter_rows():
             cursor.execute(insert_sql, row)
         self.mydb.commit()

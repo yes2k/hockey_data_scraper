@@ -93,7 +93,7 @@ class NHLDataParser():
                 parsed_end_date, eager=True
             ).cast(pl.String).alias("date")
         ).to_list()
-        
+
 
         # function to check if folder exists and if it does, empty it
         def folder_check(path: str):
@@ -106,7 +106,7 @@ class NHLDataParser():
                         shutil.rmtree(file_path)
             else:
                 os.mkdir(path)
-        
+
         out_paths = {
             "html_pbp_plays": os.path.join("./html_pbp_plays"),
             "json_pbp_game_info": os.path.join("./json_pbp_game_info"),
@@ -118,7 +118,7 @@ class NHLDataParser():
         for _, v in out_paths.items():
             folder_check(v)
 
-        # scraping data from nhl api and saving them into csvs 
+        # scraping data from nhl api and saving them into csvs
         for date in date_range:
             game_ids = self.get_game_ids(date, only_reg_season)
             if game_ids:
@@ -179,7 +179,7 @@ class NHLDataParser():
     ) -> None:
         # create databases and tables and loads csv into db
         self.db.execute_sql_file(sql_file_path)
-        
+
 
     def build_db_from_scratch(
         self,
@@ -197,14 +197,33 @@ class NHLDataParser():
         )
 
         self.build_db_from_csvs(sql_file_path)
-    
 
+    def test(self):
+        cursor = self.db.mydb.cursor()
+        cursor.execute("USE nhl_api_data;")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS test_table (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("""
+            INSERT INTO test_table (name, email) VALUES
+            ('Alice Smith', 'alice@example.com'),
+            ('Bob Johnson', 'bob@example.com'),
+            ('Charlie Lee', 'charlie@example.com'),
+            ('Dana White', NULL);
+        """)
+        self.db.mydb.commit()
+        cursor.close()
 
     def update_database(self, only_reg_season: bool):
         # get max date in database, get current date, iterate over all dates in between
         # get gameid's for each date, parse them and update them into the database
 
-       
+
         max_date = self.db.get_query_result(
             "SELECT MAX(date) FROM nhl_api_data.json_pbp_game_info"
         )[0,0]
@@ -226,6 +245,7 @@ class NHLDataParser():
             game_ids = self.get_game_ids(date, only_reg_season)
             if game_ids:
                 for g in game_ids["game_id"]:
+                    print(g)
                     # parsing json pbp
                     try:
                         out = self.json_pbp_parser.parse(g)
@@ -234,9 +254,9 @@ class NHLDataParser():
 
                     # writing to database
                     try:
-                        self.db.push_dataframe_to_db(out.game_info_to_df(), "nhl_data_api.json_pbp_game_info")
-                        self.db.push_dataframe_to_db(out.players_to_df(), "nhl_data_api.json_pbp_player_info")
-                        self.db.push_dataframe_to_db(out.plays_to_df(), "nhl_data_api.json_pbp_plays")
+                        self.db.push_dataframe_to_db(out.game_info_to_df(), "nhl_api_data.json_pbp_game_info")
+                        self.db.push_dataframe_to_db(out.players_to_df(), "nhl_api_data.json_pbp_player_info")
+                        self.db.push_dataframe_to_db(out.plays_to_df(), "nhl_api_data.json_pbp_plays")
                     except Exception:
                         logging.error(f"json pbp parser failed to write game {g} to database")
 
@@ -248,7 +268,7 @@ class NHLDataParser():
                     except Exception:
                         logging.error(f"json shift parser failed to parse game {g}")
                     try:
-                        self.db.push_dataframe_to_db(out2.to_df(), "nhl_data_api.json_shift_info")
+                        self.db.push_dataframe_to_db(out2.to_df(), "nhl_api_data.json_shift_info")
                     except Exception:
                         logging.error(f"json shift table failed to write {g} to database")
 
@@ -261,7 +281,7 @@ class NHLDataParser():
                         logging.error(f"html pbp parser failed to parse game {g}")
 
                     try:
-                        self.db.push_dataframe_to_db(out3.to_df(), "nhl_data_api.html_pbp_plays")
+                        self.db.push_dataframe_to_db(out3.to_df(), "nhl_api_data.html_pbp_plays")
                     except Exception:
                         logging.error(f"html pbp parser failed write to db {g}")
 
@@ -297,6 +317,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     nhl_parser = NHLDataParser(args.logfile)
+
+    nhl_parser = NHLDataParser("./log")
+    # nhl_parser.test()
 
     if args.command == "create_csv_backup":
         nhl_parser.parse_data_to_csvs(

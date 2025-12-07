@@ -1,1 +1,0 @@
-0 7 * * * python /app/nhl_data_parser.py update_database

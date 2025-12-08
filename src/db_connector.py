@@ -9,17 +9,6 @@ class DBConnector:
         with open(db_config_path, "r") as f:
             database_creds = json.load(f)
 
-        # try:
-        # self.mydb = mysql.connector.connect(
-        #     host="test-mysql-db",
-        #     user="root",
-        #     password="password",
-        #     allow_local_infile=True
-        # )
-        # print("Connection successful.")
-        # except mysql.connector.Error as err:
-        #     print(f"Error: {err}")
-
         try:
             self.mydb = mysql.connector.connect(
                 host=database_creds["host"],

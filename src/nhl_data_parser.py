@@ -1,30 +1,30 @@
-import polars as pl
-import requests
+import argparse
 import datetime
 import logging
 import os
 import shutil
 
-from sub_parsers.json_pbp_parser import NHLJsonPbpParser
-from sub_parsers.html_pbp_parser import NHLHtmlPbpParser
-from sub_parsers.json_shift_parser import NHLJsonShiftParser
+import polars as pl
+import requests
+
 from db_connector import DBConnector
-import argparse
+from sub_parsers.html_pbp_parser import NHLHtmlPbpParser
+from sub_parsers.json_pbp_parser import NHLJsonPbpParser
+from sub_parsers.json_shift_parser import NHLJsonShiftParser
 
 
-class NHLDataParser():
+class NHLDataParser:
     json_pbp_parser: NHLJsonPbpParser
     html_pbp_parser: NHLHtmlPbpParser
     json_shift_parser: NHLJsonShiftParser
     db: DBConnector
 
     def __init__(self, logout_file: str):
-
         self.json_pbp_parser = NHLJsonPbpParser()
         self.html_pbp_parser = NHLHtmlPbpParser()
         self.json_shift_parser = NHLJsonShiftParser()
 
-        self.db = DBConnector('./database_creds.json')
+        self.db = DBConnector("./database_creds.json")
 
         logging.basicConfig(
             filename=logout_file,
@@ -45,12 +45,7 @@ class NHLDataParser():
             print("url not found")
             return None
 
-        game_id_data = {
-            "game_id": [],
-            "date": [],
-            "home_team": [],
-            "away_team": []
-        }
+        game_id_data = {"game_id": [], "date": [], "home_team": [], "away_team": []}
         d = data["gameWeek"][0]
         for g in d["games"]:
             if only_reg_season:
@@ -67,33 +62,26 @@ class NHLDataParser():
                     game_id_data["away_team"].append(g["homeTeam"]["abbrev"])
         return game_id_data
 
-
     # scraping nhl api data and saving it to csvs
     def parse_data_to_csvs(
-            self,
-            start_date: str,
-            end_date: str,
-            only_reg_season: bool,
-            backup_out_path: str
+        self,
+        start_date: str,
+        end_date: str,
+        only_reg_season: bool,
+        backup_out_path: str,
     ) -> None:
         # getting the date range to parse
         parsed_start_date = datetime.date(
-            int(start_date[0:4]),
-            int(start_date[5:7]),
-            int(start_date[8:10])
+            int(start_date[0:4]), int(start_date[5:7]), int(start_date[8:10])
         )
         parsed_end_date = datetime.date(
-            int(end_date[0:4]),
-            int(end_date[5:7]),
-            int(end_date[8:10])
+            int(end_date[0:4]), int(end_date[5:7]), int(end_date[8:10])
         )
         date_range = (
-            pl.date_range(
-                parsed_start_date,
-                parsed_end_date, eager=True
-            ).cast(pl.String).alias("date")
+            pl.date_range(parsed_start_date, parsed_end_date, eager=True)
+            .cast(pl.String)
+            .alias("date")
         ).to_list()
-
 
         # function to check if folder exists and if it does, empty it
         def folder_check(path: str):
@@ -128,49 +116,51 @@ class NHLDataParser():
                     try:
                         json_pbp_game = self.json_pbp_parser.parse(g)
                         json_pbp_game.game_info_to_df().write_csv(
-                            os.path.join(out_paths["json_pbp_game_info"], str(g)+".csv")
+                            os.path.join(
+                                out_paths["json_pbp_game_info"], str(g) + ".csv"
+                            )
                         )
 
                         json_pbp_game.players_to_df().write_csv(
-                            os.path.join(out_paths["json_pbp_player_info"], str(g)+".csv")
+                            os.path.join(
+                                out_paths["json_pbp_player_info"], str(g) + ".csv"
+                            )
                         )
 
                         json_pbp_game.plays_to_df().write_csv(
-                            os.path.join(out_paths["json_pbp_plays"], str(g)+".csv")
+                            os.path.join(out_paths["json_pbp_plays"], str(g) + ".csv")
                         )
                     except Exception:
-                        logging.error(
-                            f"json pbp parser failed to parse game {g}")
+                        logging.error(f"json pbp parser failed to parse game {g}")
 
                     # parsing json shift pbp
                     try:
                         json_shift_game = self.json_shift_parser.parse(g)
                         json_shift_game.to_df().write_csv(
-                            os.path.join(out_paths["json_shift_info"], str(g)+".csv")
+                            os.path.join(out_paths["json_shift_info"], str(g) + ".csv")
                         )
                     except Exception:
-                        logging.error(
-                            f"json shift parser failed to parse game {g}")
+                        logging.error(f"json shift parser failed to parse game {g}")
 
                     # parsing html pbp
                     try:
                         html_pbp_games = self.html_pbp_parser.parse(str(g))
                         html_pbp_games.to_df().write_csv(
-                            os.path.join(out_paths["html_pbp_plays"], str(g)+".csv")
+                            os.path.join(out_paths["html_pbp_plays"], str(g) + ".csv")
                         )
                     except Exception:
-                        logging.error(
-                            f"html pbp parser failed to parse game {g}")
+                        logging.error(f"html pbp parser failed to parse game {g}")
 
         if not os.path.exists(backup_out_path):
             os.makedirs(backup_out_path)
 
         for k, v in out_paths.items():
-            csv_files = [os.path.join(v, f) for f in os.listdir(v) if f.endswith('.csv')]
-            df = pl.concat([pl.read_csv(f) for f in csv_files], how = "diagonal_relaxed")
-            df.write_csv(os.path.join(backup_out_path, k+".csv"))
+            csv_files = [
+                os.path.join(v, f) for f in os.listdir(v) if f.endswith(".csv")
+            ]
+            df = pl.concat([pl.read_csv(f) for f in csv_files], how="diagonal_relaxed")
+            df.write_csv(os.path.join(backup_out_path, k + ".csv"))
             shutil.rmtree(v)
-
 
     # create tables and load data from csvs files
     def build_db_from_csvs(
@@ -180,7 +170,6 @@ class NHLDataParser():
         # create databases and tables and loads csv into db
         self.db.execute_sql_file(sql_file_path)
 
-
     def build_db_from_scratch(
         self,
         start_date: str,
@@ -189,12 +178,7 @@ class NHLDataParser():
         backup_out_path: str,
         sql_file_path: str,
     ) -> None:
-        self.parse_data_to_csvs(
-            start_date,
-            end_date,
-            only_reg_season,
-            backup_out_path
-        )
+        self.parse_data_to_csvs(start_date, end_date, only_reg_season, backup_out_path)
 
         self.build_db_from_csvs(sql_file_path)
 
@@ -223,23 +207,22 @@ class NHLDataParser():
         # get max date in database, get current date, iterate over all dates in between
         # get gameid's for each date, parse them and update them into the database
 
-
         max_date = self.db.get_query_result(
             "SELECT MAX(date) FROM nhl_api_data.json_pbp_game_info"
-        )[0,0]
+        )[0, 0]
 
         # Range of dates to update
         date_range = (
-            pl
-            .date_range(
+            pl.date_range(
                 max_date + datetime.timedelta(days=1),
                 datetime.date.today() - datetime.timedelta(days=1),
-                eager=True
+                eager=True,
             )
             .cast(pl.String)
-            .alias("date").to_list()
+            .alias("date")
+            .to_list()
         )
-        print(f"Date range to update: {",".join(date_range)}")
+        print(f"Date range to update: {','.join(date_range)}")
 
         for date in date_range:
             game_ids = self.get_game_ids(date, only_reg_season)
@@ -254,13 +237,19 @@ class NHLDataParser():
 
                     # writing to database
                     try:
-                        self.db.push_dataframe_to_db(out.game_info_to_df(), "nhl_api_data.json_pbp_game_info")
-                        self.db.push_dataframe_to_db(out.players_to_df(), "nhl_api_data.json_pbp_player_info")
-                        self.db.push_dataframe_to_db(out.plays_to_df(), "nhl_api_data.json_pbp_plays")
+                        self.db.push_dataframe_to_db(
+                            out.game_info_to_df(), "nhl_api_data.json_pbp_game_info"
+                        )
+                        self.db.push_dataframe_to_db(
+                            out.players_to_df(), "nhl_api_data.json_pbp_player_info"
+                        )
+                        self.db.push_dataframe_to_db(
+                            out.plays_to_df(), "nhl_api_data.json_pbp_plays"
+                        )
                     except Exception:
-                        logging.error(f"json pbp parser failed to write game {g} to database")
-
-
+                        logging.error(
+                            f"json pbp parser failed to write game {g} to database"
+                        )
 
                     # parsing json shift pbp
                     try:
@@ -268,11 +257,13 @@ class NHLDataParser():
                     except Exception:
                         logging.error(f"json shift parser failed to parse game {g}")
                     try:
-                        self.db.push_dataframe_to_db(out2.to_df(), "nhl_api_data.json_shift_info")
+                        self.db.push_dataframe_to_db(
+                            out2.to_df(), "nhl_api_data.json_shift_info"
+                        )
                     except Exception:
-                        logging.error(f"json shift table failed to write {g} to database")
-
-
+                        logging.error(
+                            f"json shift table failed to write {g} to database"
+                        )
 
                     # parsing html pbp
                     try:
@@ -281,52 +272,87 @@ class NHLDataParser():
                         logging.error(f"html pbp parser failed to parse game {g}")
 
                     try:
-                        self.db.push_dataframe_to_db(out3.to_df(), "nhl_api_data.html_pbp_plays")
+                        self.db.push_dataframe_to_db(
+                            out3.to_df(), "nhl_api_data.html_pbp_plays"
+                        )
                     except Exception:
                         logging.error(f"html pbp parser failed write to db {g}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NHL Data Parser CLI")
-    parser.add_argument("--logfile", type=str, default="./src/nhl_data_parser.log", help="Path to log file")
+    parser.add_argument(
+        "--logfile",
+        type=str,
+        default="./src/nhl_data_parser.log",
+        help="Path to log file",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subparser for creating csv backup
-    parquet_parser = subparsers.add_parser("create_csv_backup", help="Scrape and save data to csv backup")
-    parquet_parser.add_argument("--start_date", type=str, required=True, help="Start date (YYYY-MM-DD)")
-    parquet_parser.add_argument("--end_date", type=str, required=True, help="End date (YYYY-MM-DD)")
-    parquet_parser.add_argument("--only_reg_season", action="store_true", help="Only regular season games")
-    parquet_parser.add_argument("--backup_out_path", type=str, required=True, help="Output path for csv backup")
+    parquet_parser = subparsers.add_parser(
+        "create_csv_backup", help="Scrape and save data to csv backup"
+    )
+    parquet_parser.add_argument(
+        "--start_date", type=str, required=True, help="Start date (YYYY-MM-DD)"
+    )
+    parquet_parser.add_argument(
+        "--end_date", type=str, required=True, help="End date (YYYY-MM-DD)"
+    )
+    parquet_parser.add_argument(
+        "--only_reg_season", action="store_true", help="Only regular season games"
+    )
+    parquet_parser.add_argument(
+        "--backup_out_path", type=str, required=True, help="Output path for csv backup"
+    )
 
     # Subparser for building db from scratch
-    scratch_parser = subparsers.add_parser("build_from_scratch", help="Scrape, save to csv, and build DB")
-    scratch_parser.add_argument("--start_date", type=str, required=True, help="Start date (YYYY-MM-DD)")
-    scratch_parser.add_argument("--end_date", type=str, required=True, help="End date (YYYY-MM-DD)")
-    scratch_parser.add_argument("--only_reg_season", action="store_true", help="Only regular season games")
-    scratch_parser.add_argument("--backup_out_path", type=str, required=True, help="Output path for csv backup")
-    scratch_parser.add_argument("--sql_file_path", type=str, required=True, help="SQL file path for DB schema")
+    scratch_parser = subparsers.add_parser(
+        "build_from_scratch", help="Scrape, save to csv, and build DB"
+    )
+    scratch_parser.add_argument(
+        "--start_date", type=str, required=True, help="Start date (YYYY-MM-DD)"
+    )
+    scratch_parser.add_argument(
+        "--end_date", type=str, required=True, help="End date (YYYY-MM-DD)"
+    )
+    scratch_parser.add_argument(
+        "--only_reg_season", action="store_true", help="Only regular season games"
+    )
+    scratch_parser.add_argument(
+        "--backup_out_path", type=str, required=True, help="Output path for csv backup"
+    )
+    scratch_parser.add_argument(
+        "--sql_file_path", type=str, required=True, help="SQL file path for DB schema"
+    )
 
     # Subparser for building db from csv backup
-    csv_db_parser = subparsers.add_parser("build_from_csv_backup", help="Build DB from existing csv backup")
-    csv_db_parser.add_argument("--csv_path", type=str, required=True, help="Path to csv backup")
-    csv_db_parser.add_argument("--sql_file_path", type=str, required=True, help="SQL file path for DB schema")
+    csv_db_parser = subparsers.add_parser(
+        "build_from_csv_backup", help="Build DB from existing csv backup"
+    )
+    csv_db_parser.add_argument(
+        "--csv_path", type=str, required=True, help="Path to csv backup"
+    )
+    csv_db_parser.add_argument(
+        "--sql_file_path", type=str, required=True, help="SQL file path for DB schema"
+    )
 
     # Subparser for updating the database
-    update_db_parser = subparsers.add_parser("update_database", help="Update the database with new games")
-    update_db_parser.add_argument("--only_reg_season", action="store_true", help="Only regular season games")
+    update_db_parser = subparsers.add_parser(
+        "update_database", help="Update the database with new games"
+    )
+    update_db_parser.add_argument(
+        "--only_reg_season", action="store_true", help="Only regular season games"
+    )
 
     args = parser.parse_args()
     nhl_parser = NHLDataParser(args.logfile)
 
     nhl_parser = NHLDataParser("./log")
-    # nhl_parser.test()
 
     if args.command == "create_csv_backup":
         nhl_parser.parse_data_to_csvs(
-            args.start_date,
-            args.end_date,
-            args.only_reg_season,
-            args.backup_out_path
+            args.start_date, args.end_date, args.only_reg_season, args.backup_out_path
         )
     elif args.command == "build_from_scratch":
         nhl_parser.build_db_from_scratch(
@@ -334,13 +360,9 @@ if __name__ == "__main__":
             args.end_date,
             args.only_reg_season,
             args.backup_out_path,
-            args.sql_file_path
+            args.sql_file_path,
         )
     elif args.command == "build_from_csv_backup":
-        nhl_parser.build_db_from_csvs(
-            args.sql_file_path
-        )
+        nhl_parser.build_db_from_csvs(args.sql_file_path)
     elif args.command == "update_database":
-        nhl_parser.update_database(
-            args.only_reg_season
-        )
+        nhl_parser.update_database(args.only_reg_season)

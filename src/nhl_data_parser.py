@@ -283,7 +283,7 @@ class NHLDataParser:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NHL Data Parser CLI")
     parser.add_argument("--logfile", type=str, default="./src/nhl_data_parser.log", help="Path to log file")
-    parser.add_argument("--db_cred_path", type=str, default="./database_creds.json", required = True, help="Path to database credential json file")
+    parser.add_argument("--db_cred_path", type=str, default="./database_creds.json", help="Path to database credential json file")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subparser for creating csv backup

@@ -19,12 +19,13 @@ class NHLDataParser:
     json_shift_parser: NHLJsonShiftParser
     db: DBConnector
 
-    def __init__(self, logout_file: str):
+    def __init__(self, logout_file: str, db_cred_path: str):
+
         self.json_pbp_parser = NHLJsonPbpParser()
         self.html_pbp_parser = NHLHtmlPbpParser()
         self.json_shift_parser = NHLJsonShiftParser()
 
-        self.db = DBConnector("./database_creds.json")
+        self.db = DBConnector(db_cred_path)
 
         logging.basicConfig(
             filename=logout_file,
@@ -281,12 +282,8 @@ class NHLDataParser:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NHL Data Parser CLI")
-    parser.add_argument(
-        "--logfile",
-        type=str,
-        default="./src/nhl_data_parser.log",
-        help="Path to log file",
-    )
+    parser.add_argument("--logfile", type=str, default="./src/nhl_data_parser.log", help="Path to log file")
+    parser.add_argument("--db_cred_path", type=str, default="./database_creds.json", required = True, help="Path to database credential json file")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subparser for creating csv backup
@@ -346,9 +343,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    nhl_parser = NHLDataParser(args.logfile)
-
-    nhl_parser = NHLDataParser("./log")
+    nhl_parser = NHLDataParser(args.logfile, args.db_cred_path)
 
     if args.command == "create_csv_backup":
         nhl_parser.parse_data_to_csvs(

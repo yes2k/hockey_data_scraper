@@ -1,7 +1,10 @@
 import json
+import logging
 
 import mysql.connector
 import polars as pl
+
+logger = logging.getLogger(__name__)
 
 
 class DBConnector:
@@ -18,7 +21,7 @@ class DBConnector:
                 allow_local_infile=True,
             )
         except mysql.connector.Error as err:
-            print("connection error")
+            logger.error("Database connection error")
             raise err
 
     def execute_sql_file(self, sql_file_path: str):
@@ -33,10 +36,9 @@ class DBConnector:
                 try:
                     mycursor.execute(statement)
                 except mysql.connector.Error as err:
-                    print(
-                        f"Error executing SQL statement: {statement.strip()[:100]}..."
+                    logger.error(
+                        f"Error executing SQL statement: {statement.strip()[:100]}... - MySQL Error: {err}"
                     )
-                    print(f"MySQL Error: {err}")
 
         self.mydb.commit()
         mycursor.close()
@@ -59,14 +61,14 @@ class DBConnector:
         df = pl.read_parquet(parquet_path)
 
         if df.is_empty():
-            print(f"No data found in {parquet_path}")
+            logger.warning(f"No data found in {parquet_path}")
             return
 
         self.push_dataframe_to_db(df, table_name)
 
     def push_dataframe_to_db(self, df: pl.DataFrame, table_name: str):
         if df.is_empty():
-            print(f"DataFrame is empty. Nothing to insert into {table_name}")
+            logger.warning(f"DataFrame is empty. Nothing to insert into {table_name}")
             return
 
         cursor = self.mydb.cursor()

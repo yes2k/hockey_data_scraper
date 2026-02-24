@@ -1,6 +1,8 @@
 import argparse
 import datetime
 import logging
+
+logger = logging.getLogger(__name__)
 import os
 import shutil
 
@@ -20,7 +22,6 @@ class NHLDataParser:
     db: DBConnector
 
     def __init__(self, logout_file: str, db_cred_path: str):
-
         self.json_pbp_parser = NHLJsonPbpParser()
         self.html_pbp_parser = NHLHtmlPbpParser()
         self.json_shift_parser = NHLJsonShiftParser()
@@ -43,7 +44,7 @@ class NHLDataParser:
         try:
             data = requests.get(url).json()
         except Exception:
-            print("url not found")
+            logger.warning(f"Failed to fetch schedule for {date}: url not found")
             return None
 
         game_id_data = {"game_id": [], "date": [], "home_team": [], "away_team": []}
@@ -112,7 +113,7 @@ class NHLDataParser:
             game_ids = self.get_game_ids(date, only_reg_season)
             if game_ids:
                 for g in game_ids["game_id"]:
-                    print(g)
+                    logger.info(f"Processing game {g}")
                     # parsing json pbp
                     try:
                         json_pbp_game = self.json_pbp_parser.parse(g)
@@ -223,13 +224,13 @@ class NHLDataParser:
             .alias("date")
             .to_list()
         )
-        print(f"Date range to update: {','.join(date_range)}")
+        logger.info(f"Date range to update: {','.join(date_range)}")
 
         for date in date_range:
             game_ids = self.get_game_ids(date, only_reg_season)
             if game_ids:
                 for g in game_ids["game_id"]:
-                    print(g)
+                    logger.info(f"Processing game {g}")
                     # parsing json pbp
                     try:
                         out = self.json_pbp_parser.parse(g)
@@ -282,8 +283,15 @@ class NHLDataParser:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NHL Data Parser CLI")
-    parser.add_argument("--logfile", type=str, default="./src/nhl_data_parser.log", help="Path to log file")
-    parser.add_argument("--db_cred_path", type=str, default="./database_creds.json", help="Path to database credential json file")
+    parser.add_argument(
+        "--logfile", type=str, default="./nhl_data_parser.log", help="Path to log file"
+    )
+    parser.add_argument(
+        "--db_cred_path",
+        type=str,
+        default="./database_creds.json",
+        help="Path to database credential json file",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subparser for creating csv backup
